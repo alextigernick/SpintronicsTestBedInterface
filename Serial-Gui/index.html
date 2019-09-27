@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Control</title>
+    <style>
+      table, td, th {  
+        border: 1px solid #ddd;
+      }
+
+      table {
+        border-collapse: collapse;
+      }
+
+      th, td {
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <select id="portselect"></select><button onclick="refreshPorts()">Refresh</button><button onclick="connect()" id="connectButton">Connect</button>
+    <select id="baudrate">
+      <option value="9600">9600</option>
+      <option value="38400">38400</option>
+      <option value="57600" selected>57600</option>
+      <option value="115200">115200</option>
+    </select>
+    <table>
+      <form onsubmit="go(2);return false;" id="m2" action="#">
+          <tr><th colspan="3">Recoat</th></tr>
+          <tr><td>Speed</td> <td><input type="number" name="speed" value="50"></td><td>
+            <select name="speed_units">
+              <option value="1">um/s</option>
+              <option value="1000">mm/s</option>
+              <option value="10000">cm/s</option>
+              <option value="1000000">m/s</option>
+            </select>
+          </td></tr>
+          <tr><td>Distance</td>   <td><input type="number" name="distance" value="20"></td><td>
+            <select name="distance_units">
+              <option value="1">um</option>
+              <option value="1000">mm</option>
+              <option value="10000">cm</option>
+              <option value="1000000">m</option>
+            </select>
+          </td></tr>
+          <tr><th colspan="3"><input type="submit" value="GO"></th></tr>
+      </form>
+      <form onsubmit="go(0);return false;" id="m0" action="#">
+        <tr><th colspan="3">Supply</th></tr>
+        <tr><td>Speed</td> <td><input type="number" name="speed" value="50"></td><td>
+          <select name="speed_units">
+            <option value="1">um/s</option>
+            <option value="1000">mm/s</option>
+            <option value="10000">cm/s</option>
+            <option value="1000000">m/s</option>
+          </select>
+        </td></tr>
+        <tr><td>Distance</td>   <td><input type="number" name="distance" value="20"></td><td>
+          <select name="distance_units">
+            <option value="1">um</option>
+            <option value="1000">mm</option>
+            <option value="10000">cm</option>
+            <option value="1000000">m</option>
+          </select>
+        </td></tr>
+        <tr><th colspan="3"><input type="submit" value="GO"></th></tr>
+      </form>
+      <form onsubmit="go(1);return false;" id="m1" action="#">
+        <tr><th colspan="3">Build</th></tr>
+        <tr><td>Speed</td> <td><input type="number" name="speed" value="50"></td><td>
+          <select name="speed_units">
+            <option value="1">um/s</option>
+            <option value="1000">mm/s</option>
+            <option value="10000">cm/s</option>
+            <option value="1000000">m/s</option>
+          </select>
+        </td></tr>
+        <tr><td>Distance</td>   <td><input type="number" name="distance" value="20"></td><td>
+          <select name="distance_units">
+            <option value="1">um</option>
+            <option value="1000">mm</option>
+            <option value="10000">cm</option>
+            <option value="1000000">m</option>
+          </select>
+        </td></tr>
+        <tr><th colspan="3"><input type="submit" value="GO"></th></tr>
+        <tr><td colspan="3">Positive is Up/Right, Negative is Down/Left</td></tr>
+      </form>
+
+    </table>
+    <script src="./renderer.js"></script>
+  </body>
+</html>
