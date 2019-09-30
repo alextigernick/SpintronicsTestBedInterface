@@ -50,9 +50,9 @@ function connect(){
 }
 function go(x){
   s = x + " " + document.forms["m"+x].distance.value*document.forms["m"+x].distance_units.value + " " + document.forms["m"+x].speed.value*document.forms["m"+x].speed_units.value
+  console.log(s);
   if(connected){
     port.write(s + "\n",function(err){if (err){console.log(err)}});
-    console.log(s);
   }
   return false;
 }
