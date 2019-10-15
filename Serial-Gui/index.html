@@ -41,18 +41,18 @@
       <table>
         <form onsubmit="go(0);return false;" id="m0" action="#">
           <tr><th colspan="3">Supply</th></tr>
-          <tr><td>Speed</td> <td><input type="number" name="speed" value="50"></td><td>
+          <tr><td>Speed</td> <td><input type="number" name="speed" value="2" step="any"></td><td>
             <select name="speed_units">
               <option value="1">um/s</option>
-              <option value="1000">mm/s</option>
+              <option value="1000" selected>mm/s</option>
               <option value="10000">cm/s</option>
               <option value="1000000">m/s</option>
             </select>
           </td></tr>
-          <tr><td>Distance</td>   <td><input type="number" name="distance" value="20"></td><td>
+          <tr><td>Distance</td>   <td><input type="number" name="distance" value="1" step="any"></td><td>
             <select name="distance_units">
               <option value="1">um</option>
-              <option value="1000">mm</option>
+              <option value="1000" selected>mm</option>
               <option value="10000">cm</option>
               <option value="1000000">m</option>
             </select>
@@ -61,18 +61,18 @@
         </form>
         <form onsubmit="go(1);return false;" id="m1" action="#">
           <tr><th colspan="3">Build</th></tr>
-          <tr><td>Speed</td> <td><input type="number" name="speed" value="50"></td><td>
+          <tr><td>Speed</td> <td><input type="number" name="speed" value="2" step="any"></td><td>
             <select name="speed_units">
               <option value="1">um/s</option>
-              <option value="1000">mm/s</option>
+              <option value="1000" selected>mm/s</option>
               <option value="10000">cm/s</option>
               <option value="1000000">m/s</option>
             </select>
           </td></tr>
-          <tr><td>Distance</td>   <td><input type="number" name="distance" value="20"></td><td>
+          <tr><td>Distance</td>   <td><input type="number" name="distance" value="1" step="any"></td><td>
             <select name="distance_units">
               <option value="1">um</option>
-              <option value="1000">mm</option>
+              <option value="1000" selected>mm</option>
               <option value="10000">cm</option>
               <option value="1000000">m</option>
             </select>
@@ -82,7 +82,7 @@
         </form>
         <form onsubmit="go(2);return false;" id="m2" action="#">
           <tr><th colspan="3">Recoat</th></tr>
-          <tr><td>Speed</td> <td><input type="number" name="speed" value="50"></td><td>
+          <tr><td>Speed</td> <td><input type="number" name="speed" value="50" step="any"></td><td>
             <select name="speed_units">
               <option value="1">um/s</option>
               <option value="1000" selected>mm/s</option>
@@ -90,7 +90,7 @@
               <option value="1000000">m/s</option>
             </select>
           </td></tr>
-          <tr><td>Distance</td>   <td><input type="number" name="distance" value="20"></td><td>
+          <tr><td>Distance</td>   <td><input type="number" name="distance" value="20" step="any"></td><td>
             <select name="distance_units">
               <option value="1">um</option>
               <option value="1000" selected>mm</option>
@@ -114,31 +114,31 @@
           </tr>
           <tr>
             <td>Recoat park position(cm):</td>
-            <td><input type="number" name="park" value="37"></td>
+            <td><input type="number" name="park" value="37" step="any"></td>
           </tr>
           <tr>
             <td>Supply up travel(um):</td>
-            <td><input type="number" name="sup" value="240"></td>
+            <td><input type="number" name="sup" value="240" step="any"></td>
           </tr>
           <tr>
             <td>Supply down travel(um):</td>
-            <td><input type="number" name="sdown" value="200"></td>
+            <td><input type="number" name="sdown" value="200" step="any"></td>
           </tr>
           <tr>
             <td>Build down travel(um):</td>
-            <td><input type="number" name="bdown" value="40"></td>
+            <td><input type="number" name="bdown" value="40" step="any"></td>
           </tr>
           <tr>
             <td>Build speed(um/s):</td>
-            <td><input type="number" name="bspeed" value="50"></td>
+            <td><input type="number" name="bspeed" value="50" step="any"></td>
           </tr>
           <tr>
             <td>Supply speed(um/s):</td>
-            <td><input type="number" name="sspeed" value="50"></td>
+            <td><input type="number" name="sspeed" value="50" step="any"></td>
           </tr>
           <tr>
             <td>Recoat speed(cm/s):</td>
-            <td><input type="number" name="rspeed" value="5"></td>
+            <td><input type="number" name="rspeed" value="5" step="any"></td>
           </tr>
           <tr>
             <td>Delay source:</td>
@@ -151,7 +151,7 @@
           </tr>
           <tr>
             <td>Delay between moves(s):</td>
-            <td><input type="number" name="spacing" value="0.2"></td>
+            <td><input type="number" name="spacing" value="0.2" step="any"></td>
           </tr>
           <tr><td colspan="2" style="text-align:center;"><input type="submit" value="Generate"></td></tr>
         </table>

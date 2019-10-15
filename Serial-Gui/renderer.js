@@ -79,7 +79,7 @@ function incoming(line){
   }
 }
 function motor(mot,distance,speed){
-  s = "m" + mot + " " + distance + " " + speed;
+  s = "m" + mot + " " + Math.round(distance) + " " + Math.round(speed);
   if(connected){
     que(s + "\n");
   }
@@ -94,7 +94,7 @@ function addToQueue(){
 }
 function delay(t){
   if(connected){
-    que("d"+t*1000+"\n");
+    que("d"+Math.round(t*1000)+"\n");
   }
 }
 function sendCommand(command){
