@@ -5,141 +5,169 @@
 const serialport = require('serialport');
 var SerialPort = serialport.SerialPort;
 const Readline = require('@serialport/parser-readline');
-select = document.getElementById('portselect');
-baud = document.getElementById('baudrate');
-var port;
-var connected = false;
-var indicator = document.getElementById("indicator");
+var ports = [undefined,undefined];
+var connected = [false,false];
 var waiting = false;
-var msgQueue = [];
+var inQueues = [[],[]];
+var outQueues = [[],[]];
+var arduReady = false;
+var nanoVeri = false;
+var mults = [32/0.09,-8*200/0.8]
 function refreshPorts(){
-  select.innerHTML = '';
-  serialport.list(function (err, ports) {
-    ports.forEach(function(port) {
-      var opt = document.createElement('option');
-      opt.value = port.comName;
-      opt.innerHTML = port.comName + " - " + port.manufacturer;
-      select.appendChild(opt);
+  if (!connected[0])
+  document.forms.serial0.getElementsByTagName("select").portselect.innerHTML = '';
+  if (!connected[1])
+  document.forms.serial1.getElementsByTagName("select").portselect.innerHTML = ''
+  serialport.list(function (err, portl) {
+    portl.forEach(function(port) {
+      if (!connected[0]) {
+        var opt = document.createElement('option');
+        opt.value = port.comName;
+        opt.innerHTML = port.comName + " - " + port.manufacturer;
+        document.forms.serial0.getElementsByTagName("select").portselect.appendChild(opt);
+      }
+      if (!connected[1]){
+        var opt = document.createElement('option');
+        opt.value = port.comName;
+        opt.innerHTML = port.comName + " - " + port.manufacturer;
+        document.forms.serial1.getElementsByTagName("select").portselect.appendChild(opt);
+      }
     });
   });
 }
-var queue = [];
-function connect(){
-    if (!connected){
-      port = new serialport(select.options[select.selectedIndex].value, { baudRate: parseInt(baud.options[baud.selectedIndex].value) },
-      function (err) {
-        if (err) {
-          return console.log('Error: ', err.message)
-        }
-        else{
-          const parser = new Readline()
-          port.pipe(parser)
-          parser.on('data', line => msgQueue.push(line));
-          port.on('close',function(err){
-            connected=false;
-            document.getElementById('connectButton').innerHTML = "Connect";
-            if(err){
-              console.log(err);
+function connect(x){
+    if (!connected[x]){
+      var select = document.forms["serial"+x].getElementsByTagName("select").portselect;
+      var baud = document.forms["serial"+x].getElementsByTagName("select").baudrate;
+      ports[x] = new serialport(select.options[select.selectedIndex].value, { baudRate: parseInt(baud.options[baud.selectedIndex].value) },
+        function (err) {
+          if (err) {
+            return console.log('Error: ', err.message)
+          }
+          else{
+            parser = new Readline()
+            ports[x].pipe(parser)
+            parser.on('data', line => inQueues[x].push(line.replace(/(\r\n|\n|\r)/gm,"")));
+            ports[x].on('close',function(err){
+              connected[x] = false;
+              outQueues[x] = []
+              document.forms["serial"+x].getElementsByTagName("input")[0].value = "Connect";
+              if(err){
+                console.log(err);
+              }
+            });
+            if(x == 0){
+              arduReady = false;
             }
-          });
-          connected = true;
-          document.getElementById('connectButton').innerHTML = "Disconnect";
-          queue = [];
+            else{
+              nanoVeri = false;
+            }
+            connected[x] = true;
+            document.forms["serial"+x].getElementsByTagName("input")[0].value = "Disconnect";
+            outQueues[x] = [];
+          }
         }
-      }
       );
     }
     else{
-      port.close();
+      ports[x].close();
     }
 }
-setInterval(function(){ while(msgQueue.length){incoming(msgQueue.pop());} }, 20);
-function incoming(line){
-  if(line.startsWith("home")){
-    if(parseInt(line[4])){
-      indicator.style.backgroundColor="green";
+function parseQueues(){ 
+  while(inQueues[0].length){
+    incomingArdu(inQueues[0].pop());
+  }
+  while(inQueues[1].length){
+    incomingVolt(inQueues[1].pop());
+  }
+  setTimeout(parseQueues,20);
+}
+setTimeout(parseQueues, 20);
+/*function parseOutQueues(){ 
+  while(outQueues[0].length){
+    incomingArdu(outQueues[0].pop());
+  }
+  while(outQueues[1].length){
+    incomingVolt(outQueues[1].pop());
+  }
+  setTimeout(parseOutQueues,20);
+}
+setTimeout(parseOutQueues, 20);*/
+function poll(){
+  if(connected[0] & arduReady){
+    ports[0].write("r\n",function(err){if (err){console.log(err)}});
+  }
+  if(connected[1]){
+    if(!nanoVeri){
+      ports[1].write(":CONFigure:VOLTage:DC\n",function(err){if (err){console.log(err)}});
+      ports[1].write(":INITiate:CONTinuous ON\n",function(err){if (err){console.log(err)}});
+      nanoVeri = true;
     }
     else{
-      indicator.style.backgroundColor="red";
+      ports[1].write(":FETCH?\n");
     }
+  }
+  setTimeout(poll, parseFloat(document.getElementById("poll").value)*1000);
+}
+setTimeout(poll, parseFloat(document.getElementById("poll").value)*1000);
+function incomingArdu(line){
+  console.log("Arduino: "+line)
+  if(line == "RD"){
+    arduReady = true
+  }
+  else if(line[0] == 't'){
+    var res = line.split(":");
+    document.getElementById("t1").innerHTML = res[2];
+    document.getElementById("t2").innerHTML = res[4]; 
   }
   else if(line.startsWith("done")){
     console.log("DONE");
-    if(queue.length == 0){
+    if(outQueues[0].length == 0){
       waiting = false;
     }
     else{
-      to_send = queue.shift();
+      to_send = outQueues[0].shift();
       sendCommand(to_send);
-      document.getElementById("queueCount").innerHTML = queue.length;
+      document.getElementById("queueCount").innerHTML = outQueues[0].length;
     }
   }
-  else {
-    console.log(line);
+}
+function incomingVolt(line){
+  document.getElementById("voltage").innerHTML = line;
+}
+function light(){
+  if(connected[0] & arduReady){
+    ports[0].write("l\n");
   }
 }
-function motor(mot,distance,speed){
-  s = "m" + mot + " " + Math.round(distance) + " " + Math.round(speed);
-  if(connected){
+function go(x){
+  motor(x,parseInt(document.forms["m"+x].distance.value)*mults[x])
+  return false;
+}
+function motor(mot,distance){
+  s = "m" + mot + " " + Math.round(distance);
+  if(connected[0]){
     que(s + "\n");
-  }
-}
-function home(){
-  if(connected){
-    que("h\n");
-  }
-}
-function addToQueue(){
-  eval(document.forms["program"].program.value);
-}
-function delay(t){
-  if(connected){
-    que("d"+Math.round(t*1000)+"\n");
-  }
-}
-function sendCommand(command){
-  if (command.startsWith("d-")){
-    alert('Waiting for input to continue');
-    console.log("d1");
-    port.write("d1\n",function(err){if (err){console.log(err)}});
-  }
-  else{
-    console.log(command);
-    port.write(command,function(err){if (err){console.log(err)}});
   }
 }
 function que(command){
   if(waiting){
-    queue.push(command);
-    document.getElementById("queueCount").innerHTML = queue.length;
+    outQueues[0].push(command);
+    document.getElementById("queueCount").innerHTML = outQueues[0].length;
   }
   else{
     waiting = true;
     sendCommand(command);
   }
 }
-function addToEditor(){
-  gen = document.forms["gen"];
-  d =  document.forms["gen"].delay_source.value == "1"?gen.spacing.value:-1;
-  document.forms["program"].program.value = "";
-  document.forms["program"].program.value += "for(var i = 0; i < "+gen.reps.value+"; i++){\n"
-  document.forms["program"].program.value += "motor(0,"+gen.sup.value+","+gen.sspeed.value+");\n";
-  document.forms["program"].program.value += "delay("+d+");\n";
-  document.forms["program"].program.value += "motor(2,"+(parseInt(gen.park.value)+0.5)*10000+","+gen.rspeed.value*10000+");\n";
-  document.forms["program"].program.value += "delay("+d+");\n";
-  document.forms["program"].program.value += "home();\n";
-  document.forms["program"].program.value += "delay("+d+");\n";
-  document.forms["program"].program.value += "motor(0,-"+gen.sdown.value+","+gen.sspeed.value+");\n";
-  document.forms["program"].program.value += "delay("+d+");\n";
-  document.forms["program"].program.value += "motor(1,-"+gen.bdown.value+","+gen.bspeed.value+");\n";
-  document.forms["program"].program.value += "delay("+d+");\n";
-  document.forms["program"].program.value += "motor(2,-"+gen.park.value*10000+","+gen.rspeed.value*10000+");\n";
-  document.forms["program"].program.value += "delay("+d+");\n";
-  document.forms["program"].program.value += "}";
-  
-}
-function go(x){
-  motor(x,document.forms["m"+x].distance.value*document.forms["m"+x].distance_units.value,document.forms["m"+x].speed.value*document.forms["m"+x].speed_units.value)
-  return false;
+function sendCommand(command){
+  console.log(command);
+  ports[0].write(command,function(err){if (err){console.log(err)}});
 }
 refreshPorts();
+/*
+*STB? //check the status register
+:CONFigure:VOLTage:DC
+:INITiate:CONTinuous ON
+:fetch?
+*/
