@@ -3,8 +3,10 @@
 // All of the Node.js APIs are available in this process.
 const fs = require("fs");
 const serialport = require('serialport');
-var SerialPort = serialport.SerialPort;
+const SerialPort = serialport.SerialPort;
 const Readline = require('@serialport/parser-readline');
+const Plotly = require('plotly.js-dist');
+const {dialog} = require('electron').remote;
 var ports = [undefined,undefined];
 var connected = [false,false];
 var waiting = false;
@@ -16,6 +18,7 @@ var mults = [32/0.09,-8*200/0.8]
 var logs = [];
 var last = ["","","",""];
 var logging = false;
+var startTime = 0;
 function refreshPorts(){
   if (!connected[0])
   document.forms.serial0.getElementsByTagName("select").portselect.innerHTML = '';
@@ -96,10 +99,34 @@ setTimeout(parseQueues, 20);
   setTimeout(parseOutQueues,20);
 }
 setTimeout(parseOutQueues, 20);*/
+function StartLogging(){
+	logging = true;
+	logs = [];
+	last = [new Date().getTime(),"","",""];
+	startTime = last[0];
+}
+function StopLogging(){
+	logging = false;
+}
+
+function SaveLogs(fname){
+	console.log(logs);
+	fs.open(fname, 'w', (err, fd) => {
+	  if (err) throw err;
+	  for (const log of logs){
+		 fs.writeFileSync(fd,log+"\n"); 
+	  }
+	  fs.close(fd, (err) => {
+		if (err) throw err;
+		incomingArdu("done");
+	  });
+	});
+}
 function poll(){
   if(logging){
 	logs.push(last);
 	last = [new Date().getTime(),"","",""];
+	plotLogs();
   }
   if(connected[0] & arduReady){
     ports[0].write("r\n",function(err){if (err){console.log(err)}});
@@ -117,6 +144,29 @@ function poll(){
   setTimeout(poll, parseFloat(document.getElementById("poll").value)*1000);
 }
 setTimeout(poll, parseFloat(document.getElementById("poll").value)*1000);
+function plotLogs(){
+	var scale = parseFloat(document.getElementById("scaleFactor").value);
+	var data = [{
+	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+	  y: logs.map(function(datum){return datum[1];}),
+	  type: 'scatter',
+	  name: 't1'
+	},
+	{
+	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+	  y: logs.map(function(datum){return datum[2];}),
+	  type: 'scatter',
+	  name: 't2'
+	},
+	{
+	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+	  y: logs.map(function(datum){return datum[3]*scale;}),
+	  type: 'scatter',
+	  name: 'v'
+	}];
+
+	Plotly.newPlot('PlotDiv', data);
+}
 function incomingArdu(line){
   console.log("Arduino: "+line)
   if(line == "RD"){
@@ -184,25 +234,13 @@ function sendCommand(command){
 	setTimeout(function(){incomingArdu("done");}, parseInt(command.replace("d","")));
   }	
   else if (command.startsWith("s")){
-	logging = true;
-	logs = [];
-	last = [new Date().getTime(),"","",""];
+	StartLogging();
 	incomingArdu("done");
   }	
   else if (command.startsWith("e")){
 	logging = false;
 	logs.push(last);
-	console.log(logs);
-	fs.open(command.substring(1), 'w', (err, fd) => {
-	  if (err) throw err;
-	  for (const log of logs){
-		 fs.writeFileSync(fd,log+"\n"); 
-	  }
-	  fs.close(fd, (err) => {
-		if (err) throw err;
-		incomingArdu("done");
-	  });
-	});
+	SaveLogs(command.substring(1));
   }	
   else {
 	console.log(command);
