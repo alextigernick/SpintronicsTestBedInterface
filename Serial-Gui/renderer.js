@@ -145,25 +145,56 @@ function poll(){
 }
 setTimeout(poll, parseFloat(document.getElementById("poll").value)*1000);
 function plotLogs(){
-	var scale = parseFloat(document.getElementById("scaleFactor").value);
-	var data = [{
-	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
-	  y: logs.map(function(datum){return datum[1];}),
-	  type: 'scatter',
-	  name: 't1'
-	},
-	{
-	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
-	  y: logs.map(function(datum){return datum[2];}),
-	  type: 'scatter',
-	  name: 't2'
-	},
-	{
-	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
-	  y: logs.map(function(datum){return datum[3]*scale;}),
-	  type: 'scatter',
-	  name: 'v'
-	}];
+  var scale = parseFloat(document.getElementById("scaleFactor").value);
+  var tconfig = parseInt(document.getElementById("tconfig").value);
+  if(tconfig == 0){
+    var data = [{
+      x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+      y: logs.map(function(datum){return datum[1]-datum[2];}),
+      type: 'scatter',
+      name: 't1-t2'
+    },
+    {
+      x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+      y: logs.map(function(datum){return datum[3]*scale;}),
+      type: 'scatter',
+      name: 'v'
+    }];
+  }
+  else if(tconfig == 1){
+    var data = [{
+      x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+      y: logs.map(function(datum){return datum[2]-datum[1];}),
+      type: 'scatter',
+      name: 't2-t1'
+    },
+    {
+      x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+      y: logs.map(function(datum){return datum[3]*scale;}),
+      type: 'scatter',
+      name: 'v'
+    }];
+  }
+  else{
+    var data = [{
+      x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+      y: logs.map(function(datum){return datum[1];}),
+      type: 'scatter',
+      name: 't1'
+    },
+    {
+      x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+      y: logs.map(function(datum){return datum[2];}),
+      type: 'scatter',
+      name: 't2'
+    },
+    {
+      x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+      y: logs.map(function(datum){return datum[3]*scale;}),
+      type: 'scatter',
+      name: 'v'
+    }];
+  }
 
 	Plotly.newPlot('PlotDiv', data);
 }

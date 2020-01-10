@@ -102,7 +102,12 @@
 	  <button onclick="StopLogging();">Stop Logging</button>
 	  <button onclick="var fname = dialog.showSaveDialogSync(); if(fname){SaveLogs(fname);}">Save Logs</button>
 	  Voltage Scale:
-	  <input type="text" id="scaleFactor" value="1000000"/>
+    <input type="text" id="scaleFactor" value="1000000"/>
+    <select id="tconfig">
+      <option value="0"selected>t1-t2</option>
+      <option value="1">t2-t1</option>
+      <option value="2">t1,t2</option>
+    </select>
 	  <div id="PlotDiv">
 	  </div>
 	</div>
