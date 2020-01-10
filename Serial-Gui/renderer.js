@@ -1,10 +1,12 @@
 // This file is required by the index.html file and will
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
-
+const fs = require("fs");
 const serialport = require('serialport');
-var SerialPort = serialport.SerialPort;
+const SerialPort = serialport.SerialPort;
 const Readline = require('@serialport/parser-readline');
+const Plotly = require('plotly.js-dist');
+const {dialog} = require('electron').remote;
 var ports = [undefined,undefined];
 var connected = [false,false];
 var waiting = false;
@@ -13,6 +15,10 @@ var outQueues = [[],[]];
 var arduReady = false;
 var nanoVeri = false;
 var mults = [32/0.09,-8*200/0.8]
+var logs = [];
+var last = ["","","",""];
+var logging = false;
+var startTime = 0;
 function refreshPorts(){
   if (!connected[0])
   document.forms.serial0.getElementsByTagName("select").portselect.innerHTML = '';
@@ -93,7 +99,35 @@ setTimeout(parseQueues, 20);
   setTimeout(parseOutQueues,20);
 }
 setTimeout(parseOutQueues, 20);*/
+function StartLogging(){
+	logging = true;
+	logs = [];
+	last = [new Date().getTime(),"","",""];
+	startTime = last[0];
+}
+function StopLogging(){
+	logging = false;
+}
+
+function SaveLogs(fname){
+	console.log(logs);
+	fs.open(fname, 'w', (err, fd) => {
+	  if (err) throw err;
+	  for (const log of logs){
+		 fs.writeFileSync(fd,log+"\n"); 
+	  }
+	  fs.close(fd, (err) => {
+		if (err) throw err;
+		incomingArdu("done");
+	  });
+	});
+}
 function poll(){
+  if(logging){
+	logs.push(last);
+	last = [new Date().getTime(),"","",""];
+	plotLogs();
+  }
   if(connected[0] & arduReady){
     ports[0].write("r\n",function(err){if (err){console.log(err)}});
   }
@@ -110,6 +144,29 @@ function poll(){
   setTimeout(poll, parseFloat(document.getElementById("poll").value)*1000);
 }
 setTimeout(poll, parseFloat(document.getElementById("poll").value)*1000);
+function plotLogs(){
+	var scale = parseFloat(document.getElementById("scaleFactor").value);
+	var data = [{
+	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+	  y: logs.map(function(datum){return datum[1];}),
+	  type: 'scatter',
+	  name: 't1'
+	},
+	{
+	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+	  y: logs.map(function(datum){return datum[2];}),
+	  type: 'scatter',
+	  name: 't2'
+	},
+	{
+	  x: logs.map(function(datum){return (datum[0]-startTime)/1000;}),
+	  y: logs.map(function(datum){return datum[3]*scale;}),
+	  type: 'scatter',
+	  name: 'v'
+	}];
+
+	Plotly.newPlot('PlotDiv', data);
+}
 function incomingArdu(line){
   console.log("Arduino: "+line)
   if(line == "RD"){
@@ -119,6 +176,8 @@ function incomingArdu(line){
     var res = line.split(":");
     document.getElementById("t1").innerHTML = res[2];
     document.getElementById("t2").innerHTML = res[4]; 
+	last[1] = res[2];
+	last[2] = res[4];
   }
   else if(line.startsWith("done")){
     console.log("DONE");
@@ -134,21 +193,31 @@ function incomingArdu(line){
 }
 function incomingVolt(line){
   document.getElementById("voltage").innerHTML = line;
+  last[3] = line;
 }
 function light(){
   if(connected[0] & arduReady){
-    ports[0].write("l\n");
+    que("l\n");
   }
 }
 function go(x){
-  motor(x,parseInt(document.forms["m"+x].distance.value)*mults[x])
+  motor(x,parseInt(document.forms["m"+x].distance.value))
   return false;
 }
 function motor(mot,distance){
-  s = "m" + mot + " " + Math.round(distance);
+  s = "m" + mot + " " + Math.round(distance*mults[mot]);
   if(connected[0]){
     que(s + "\n");
   }
+}
+function delay(ms){
+  que("d"+ms+"\n");
+}
+function startLog(){
+  que("s");
+}
+function endLog(name){
+  que("e"+name);
 }
 function que(command){
   if(waiting){
@@ -161,10 +230,30 @@ function que(command){
   }
 }
 function sendCommand(command){
-  console.log(command);
-  ports[0].write(command,function(err){if (err){console.log(err)}});
+  if (command.startsWith("d")){
+	setTimeout(function(){incomingArdu("done");}, parseInt(command.replace("d","")));
+  }	
+  else if (command.startsWith("s")){
+	StartLogging();
+	incomingArdu("done");
+  }	
+  else if (command.startsWith("e")){
+	logging = false;
+	logs.push(last);
+	SaveLogs(command.substring(1));
+  }	
+  else {
+	console.log(command);
+	ports[0].write(command,function(err){if (err){console.log(err)}});
+  }
+  if(command.startsWith("l")){
+	  incomingArdu("done");
+  }
 }
 refreshPorts();
+function addToQueue(){
+  eval(document.forms["program"].program.value);
+}
 /*
 *STB? //check the status register
 :CONFigure:VOLTage:DC
